@@ -1,5 +1,12 @@
-# Unreal Engine generated output
-/Binaries/
+# Distribute the compiled Win64 editor module so artist workstations do not
+# need a C++ toolchain. Keep debug symbols and unrelated build products local.
+/Binaries/*
+!/Binaries/Win64/
+/Binaries/Win64/*
+!/Binaries/Win64/UnrealEditor-QuickWidgetTools.dll
+!/Binaries/Win64/UnrealEditor.modules
+
+# Unreal Engine temporary build output
 /Intermediate/
 /Saved/
 /DerivedDataCache/
