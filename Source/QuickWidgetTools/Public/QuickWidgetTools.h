@@ -13,6 +13,7 @@ public:
     virtual void ShutdownModule() override;
 
 private:
+    FDelegateHandle PythonPathRegistrationHandle;
     FDelegateHandle RenderFarmLayoutUpdateHandle;
 
     void RegisterMenus();

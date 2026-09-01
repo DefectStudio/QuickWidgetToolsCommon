@@ -512,7 +512,10 @@ bool ApplyWorkerLayout(const TCHAR* ObjectPath)
 
 void FQuickWidgetToolsModule::StartupModule()
 {
-    RegisterPluginPythonPath();
+    PythonPathRegistrationHandle = FCoreDelegates::OnFEngineLoopInitComplete.AddRaw(
+        this,
+        &FQuickWidgetToolsModule::RegisterPluginPythonPath
+    );
 
     if (FParse::Param(
             FCommandLine::Get(),
@@ -562,6 +565,12 @@ void FQuickWidgetToolsModule::ApplyRequestedRenderFarmLayoutUpdate()
 
 void FQuickWidgetToolsModule::ShutdownModule()
 {
+    if (PythonPathRegistrationHandle.IsValid())
+    {
+        FCoreDelegates::OnFEngineLoopInitComplete.Remove(PythonPathRegistrationHandle);
+        PythonPathRegistrationHandle.Reset();
+    }
+
     if (RenderFarmLayoutUpdateHandle.IsValid())
     {
         FCoreDelegates::OnFEngineLoopInitComplete.Remove(RenderFarmLayoutUpdateHandle);
