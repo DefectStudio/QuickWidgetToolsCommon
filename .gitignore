@@ -1,0 +1,21 @@
+# Unreal Engine generated output
+/Binaries/
+/Intermediate/
+/Saved/
+/DerivedDataCache/
+
+# Python test/cache output
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# IDE-generated files
+.vs/
+*.sln
+*.suo
+*.VC.db
+*.VC.opendb
+
+# Operating-system files
+.DS_Store
+Thumbs.db
