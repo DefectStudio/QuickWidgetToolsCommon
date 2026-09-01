@@ -13,7 +13,6 @@ public:
     virtual void ShutdownModule() override;
 
 private:
-    FDelegateHandle PythonPathRegistrationHandle;
     FDelegateHandle RenderFarmLayoutUpdateHandle;
 
     void RegisterMenus();
@@ -21,9 +20,6 @@ private:
 
     void FindEditorUtilityWidgets(TArray<FAssetData>& OutAssets) const;
     void LaunchEditorUtilityWidget(FSoftObjectPath WidgetPath) const;
-
-    void RegisterPluginPythonPath();
-    FString GetPluginPythonPath() const;
 
     void ApplyRequestedRenderFarmLayoutUpdate();
 };

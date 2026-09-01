@@ -24,14 +24,12 @@
 #include "WidgetBlueprint.h"
 #include "WidgetBlueprintOperationUtils.h"
 
-#include "Interfaces/IPluginManager.h"
 #include "Misc/CoreDelegates.h"
 #include "Misc/CommandLine.h"
 #include "Misc/PackageName.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "Modules/ModuleManager.h"
-#include "IPythonScriptPlugin.h"
 #include "UObject/SavePackage.h"
 
 #define LOCTEXT_NAMESPACE "FQuickWidgetToolsModule"
@@ -512,11 +510,6 @@ bool ApplyWorkerLayout(const TCHAR* ObjectPath)
 
 void FQuickWidgetToolsModule::StartupModule()
 {
-    PythonPathRegistrationHandle = FCoreDelegates::OnFEngineLoopInitComplete.AddRaw(
-        this,
-        &FQuickWidgetToolsModule::RegisterPluginPythonPath
-    );
-
     if (FParse::Param(
             FCommandLine::Get(),
             QuickWidgetToolsRenderFarmLayout::ApplyLayoutParameter
@@ -565,12 +558,6 @@ void FQuickWidgetToolsModule::ApplyRequestedRenderFarmLayoutUpdate()
 
 void FQuickWidgetToolsModule::ShutdownModule()
 {
-    if (PythonPathRegistrationHandle.IsValid())
-    {
-        FCoreDelegates::OnFEngineLoopInitComplete.Remove(PythonPathRegistrationHandle);
-        PythonPathRegistrationHandle.Reset();
-    }
-
     if (RenderFarmLayoutUpdateHandle.IsValid())
     {
         FCoreDelegates::OnFEngineLoopInitComplete.Remove(RenderFarmLayoutUpdateHandle);
@@ -581,73 +568,6 @@ void FQuickWidgetToolsModule::ShutdownModule()
     {
         UToolMenus::UnRegisterStartupCallback(this);
         UToolMenus::UnregisterOwner(this);
-    }
-}
-
-FString FQuickWidgetToolsModule::GetPluginPythonPath() const
-{
-    static const FString PluginName = TEXT("QuickWidgetTools");
-
-    TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(PluginName);
-    if (!Plugin.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("QuickWidgetTools: Could not find plugin '%s'"), *PluginName);
-        return FString();
-    }
-
-    FString PythonPath = FPaths::Combine(Plugin->GetBaseDir(), TEXT("Content"), TEXT("Python"));
-    PythonPath = FPaths::ConvertRelativePathToFull(PythonPath);
-    FPaths::NormalizeDirectoryName(PythonPath);
-
-    return PythonPath;
-}
-
-void FQuickWidgetToolsModule::RegisterPluginPythonPath()
-{
-    const FString PythonPath = GetPluginPythonPath();
-    if (PythonPath.IsEmpty())
-    {
-        return;
-    }
-
-    if (!FPaths::DirectoryExists(PythonPath))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("QuickWidgetTools: Python folder does not exist: %s"), *PythonPath);
-        return;
-    }
-
-    IPythonScriptPlugin* PythonScriptPlugin =
-        FModuleManager::LoadModulePtr<IPythonScriptPlugin>("PythonScriptPlugin");
-
-    if (!PythonScriptPlugin)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("QuickWidgetTools: PythonScriptPlugin is not loaded/enabled"));
-        return;
-    }
-
-    FString PythonPathForScript = PythonPath;
-    PythonPathForScript.ReplaceInline(TEXT("\\"), TEXT("/"));
-
-    const FString PythonCommand = FString::Printf(
-        TEXT("import sys\n")
-        TEXT("plugin_path = r'%s'\n")
-        TEXT("if plugin_path not in sys.path:\n")
-        TEXT("    sys.path.append(plugin_path)\n")
-        TEXT("print(f'[QuickWidgetTools] Added python path: {plugin_path}')\n")
-        TEXT("else:\n")
-        TEXT("    print(f'[QuickWidgetTools] Python path already present: {plugin_path}')\n"),
-        *PythonPathForScript
-    );
-
-    const bool bExecuted = PythonScriptPlugin->ExecPythonCommand(*PythonCommand);
-
-    if (bExecuted)
-    {
-        UE_LOG(LogTemp, Log, TEXT("QuickWidgetTools: Registered plugin Python path: %s"), *PythonPath);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("QuickWidgetTools: Failed to execute Python path registration for: %s"), *PythonPath);
     }
 }
 
