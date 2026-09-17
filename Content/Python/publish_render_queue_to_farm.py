@@ -174,7 +174,14 @@ class DispatcherSubmissionError(RuntimeError):
     pass
 
 
-def _load_dispatcher_submit_connection() -> tuple[str, str]:
+def _load_dispatcher_submit_connection(use_v2: bool = False) -> tuple[str, str]:
+    if not isinstance(use_v2, bool):
+        raise ValueError("use_v2 must be a boolean.")
+    version = "V2" if use_v2 else "V1"
+    expected_url = (
+        "https://defect-farm-api-v2.twilight-tooth-7b7c.workers.dev"
+        if use_v2 else "https://defect-farm-api.twilight-tooth-7b7c.workers.dev"
+    )
     local_app_data = os.environ.get("LOCALAPPDATA") or os.path.join(
         os.path.expanduser("~"),
         "AppData",
@@ -183,8 +190,8 @@ def _load_dispatcher_submit_connection() -> tuple[str, str]:
     settings_path = os.path.join(
         local_app_data,
         "DefectStudio",
-        "RenderFarm",
-        "cloud_connection.json",
+        "RenderFarmV2" if use_v2 else "RenderFarm",
+        "company-submit.json" if use_v2 else "cloud_connection.json",
     )
     try:
         settings = _read_json_object(settings_path)
@@ -192,23 +199,26 @@ def _load_dispatcher_submit_connection() -> tuple[str, str]:
         settings = {}
 
     api_url = _safe_text(
-        os.environ.get("DEFECT_FARM_API_URL") or settings.get("api_url")
+        os.environ.get(f"DEFECT_FARM_{version}_API_URL")
+        or settings.get("api_url") or expected_url
     ).strip().rstrip("/")
+    # Legacy/session credentials may only be reused for the selected service.
+    # A previous V2 preview session must never silently redirect the V1 checkbox.
+    legacy_url = _safe_text(os.environ.get("DEFECT_FARM_API_URL")).strip().rstrip("/")
+    legacy_matches = legacy_url == expected_url or (not legacy_url and not use_v2)
     token = _safe_text(
-        os.environ.get("DEFECT_FARM_SUBMIT_TOKEN")
+        os.environ.get(f"DEFECT_FARM_{version}_SUBMIT_TOKEN")
+        or (os.environ.get("DEFECT_FARM_SUBMIT_TOKEN") if legacy_matches else "")
         or settings.get("submit_token")
     ).strip()
-    if not api_url:
+    if api_url != expected_url:
         raise DispatcherSubmissionError(
-            "Cloud Dispatcher URL is not configured on this computer."
-        )
-    if not api_url.startswith("https://"):
-        raise DispatcherSubmissionError(
-            "Cloud Dispatcher URL must use HTTPS."
+            f"The {version} submitter profile must point to the company {version} service."
         )
     if not token:
         raise DispatcherSubmissionError(
-            "Cloud Dispatcher submit token is not configured on this computer."
+            f"The {version} submit credential is not configured on this computer. "
+            f"Ask the administrator to provision the {version} submitter profile."
         )
     return api_url, token
 
@@ -878,7 +888,7 @@ def _validate_and_build_packages(
     return packages, batch_id, submitted_utc
 
 
-def _show_confirmation(packages: list[dict[str, Any]], farm_root: str) -> bool:
+def _show_confirmation(packages: list[dict[str, Any]], farm_root: str, use_v2: bool = False) -> bool:
     editor_dialog = getattr(unreal, "EditorDialog", None)
     app_message_type = getattr(unreal, "AppMsgType", None)
     app_return_type = getattr(unreal, "AppReturnType", None)
@@ -896,7 +906,7 @@ def _show_confirmation(packages: list[dict[str, Any]], farm_root: str) -> bool:
         for package in packages
     )
     message = (
-        f"Send {len(packages)} render job(s) to the farm?\n\n"
+        f"Send {len(packages)} render job(s) to the {'V2' if use_v2 else 'V1'} farm?\n\n"
         f"Farm: {farm_root}\n\n"
         f"Jobs: {shot_preview}\n\n"
         f"Overwrite existing MP4 + EXRs: enabled for {overwrite_count} job(s)\n\n"
@@ -1036,6 +1046,7 @@ def _format_summary(
 def run(
     priority: int = DEFAULT_PRIORITY,
     require_confirmation: bool = True,
+    use_v2: bool = False,
 ) -> str:
     """Validate and publish all enabled, unconsumed jobs in the editor MRQ."""
     jobs_found = 0
@@ -1058,7 +1069,7 @@ def run(
         show_root = _load_show_file_server_root()
         farm_root = os.path.normpath(os.path.join(show_root, "renderFarm"))
         dispatcher_api_url, dispatcher_submit_token = (
-            _load_dispatcher_submit_connection()
+            _load_dispatcher_submit_connection(use_v2=use_v2)
         )
         _verify_dispatcher_health(dispatcher_api_url)
         packages, batch_id, _ = _validate_and_build_packages(
@@ -1089,7 +1100,7 @@ def run(
         _log(
             f"Preflight passed for {len(packages)} job(s). Farm root: {farm_root}"
         )
-        if require_confirmation and not _show_confirmation(packages, farm_root):
+        if require_confirmation and not _show_confirmation(packages, farm_root, use_v2=use_v2):
             message = "Farm submission cancelled by user; nothing was published."
             _log(message)
             return _format_summary(
