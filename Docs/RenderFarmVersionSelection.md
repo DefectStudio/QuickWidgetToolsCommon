@@ -8,13 +8,22 @@ The button passes the selection directly to the publisher. The confirmation
 dialog identifies the destination version. It never falls back to the other
 service if the selected version is unavailable or lacks credentials.
 
-Administrator-provisioned local profiles:
+V2 works immediately with the company submit credential bundled in
+`Content/Python/render_farm_v2_submit.json`. Artists only update the complete
+plugin and select V2; no credential installation or environment setup is needed.
+The file is intentionally distributed and tracked with the plugin, as authorized
+by the company. It contains only the V2 submit credential, with no worker or
+manager credential. Anyone who can read the plugin can read this shared submit
+credential; rotating it requires updating the bundled file and redistributing.
+
+Optional administrator-provisioned local profiles (take priority over the bundle):
 
 - V1: `%LOCALAPPDATA%/DefectStudio/RenderFarm/cloud_connection.json`.
 - V2: `%LOCALAPPDATA%/DefectStudio/RenderFarmV2/company-submit.json`.
 
 Each profile contains the corresponding company's `api_url` and `submit_token`.
-Profiles and credentials must remain outside Git. Separate environment overrides
+Machine-local profiles remain outside Git; the bundled V2 submit profile is the
+explicit exception. Separate environment overrides
 are supported as `DEFECT_FARM_V1_API_URL` / `DEFECT_FARM_V1_SUBMIT_TOKEN` and
 `DEFECT_FARM_V2_API_URL` / `DEFECT_FARM_V2_SUBMIT_TOKEN`.
 The URL must match the selected company's V1 or V2 endpoint.
@@ -26,7 +35,11 @@ is treated as V1. A previous V2 session override cannot redirect a V1 selection.
 The selector only controls farm submission from the Rendering Tool. The existing
 embedded Render Farm Viewer is unchanged.
 
-Validation: 39 Python regression tests passed, including six routing tests.
+Routing regression tests cover a fresh account with no profiles or environment
+credentials, administrator overrides, invalid bundles, and V1/V2 isolation.
+All 45 Python regression tests pass. The bundled connection was also verified
+against the hosted V2 service with no local profile or credential environment:
+the database was connected and authentication returned the `submit` role.
 The live Unreal widget's defaults, exclusive check events, active-choice re-click,
 and actual Send button were tested with submission intercepted (V1, V2, V1).
 The saved widget can be rebuilt with `Tests/Unreal/apply_render_farm_version_selector.py`

@@ -174,6 +174,30 @@ class DispatcherSubmissionError(RuntimeError):
     pass
 
 
+BUNDLED_V2_SUBMIT_PROFILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "render_farm_v2_submit.json"
+)
+
+
+def _bundled_v2_submit_token(expected_url: str) -> str:
+    """Use the company submit-only credential shipped with the editor plugin."""
+    try:
+        settings = _read_json_object(BUNDLED_V2_SUBMIT_PROFILE)
+    except (OSError, ValueError):
+        raise DispatcherSubmissionError(
+            "The bundled V2 submit connection is missing or invalid. "
+            "Update Quick Widget Tools to the complete company release."
+        ) from None
+    api_url = _safe_text(settings.get("api_url")).strip().rstrip("/")
+    token = _safe_text(settings.get("submit_token")).strip()
+    if api_url != expected_url or not token:
+        raise DispatcherSubmissionError(
+            "The bundled V2 submit connection is invalid. "
+            "Update Quick Widget Tools to the complete company release."
+        )
+    return token
+
+
 def _load_dispatcher_submit_connection(use_v2: bool = False) -> tuple[str, str]:
     if not isinstance(use_v2, bool):
         raise ValueError("use_v2 must be a boolean.")
@@ -215,6 +239,8 @@ def _load_dispatcher_submit_connection(use_v2: bool = False) -> tuple[str, str]:
         raise DispatcherSubmissionError(
             f"The {version} submitter profile must point to the company {version} service."
         )
+    if use_v2 and not token:
+        token = _bundled_v2_submit_token(expected_url)
     if not token:
         raise DispatcherSubmissionError(
             f"The {version} submit credential is not configured on this computer. "
