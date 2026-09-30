@@ -79,6 +79,26 @@ class FakeDesignerWidget:
 
 
 class ReadOnlyClientTests(unittest.TestCase):
+    def test_sql_worker_fields_reach_display(self) -> None:
+        viewer = load_viewer()
+        raw = {
+            "id": "worker-v2", "display_name": "Render PC", "status": "waiting",
+            "last_seen_at": "2026-09-30T20:00:00Z", "current_job_id": None,
+            "capabilities_json": json.dumps({"registered_projects": ["spectrum", "ironwidow"],
+                                             "git_commit": "1234567890abcdef"}),
+        }
+        client = viewer.ReadOnlyFarmClient(opener=lambda *a, **k: FakeResponse({"workers": [raw]}))
+        worker = client.list_workers()[0]
+        now = datetime(2026, 9, 30, 20, 0, 30, tzinfo=timezone.utc)
+        self.assertEqual(("Render PC", "spectrum, ironwidow", "Waiting", "—", "30 sec ago", "12345678"),
+                         viewer.worker_row(worker, now=now))
+        self.assertEqual("waiting", viewer.worker_status_style(worker, now=now))
+        raw.update(status="offline", current_job_id="shot-job", capabilities_json="invalid")
+        row = viewer.worker_row(client.list_workers()[0], now=now)
+        self.assertEqual("Stale", row[2])
+        self.assertEqual("shot-job", row[3])
+        self.assertEqual("Unknown", row[5])
+
     def test_every_request_is_get_and_uses_bearer_viewer_auth(self) -> None:
         viewer = load_viewer()
         opener = RecordingOpener()

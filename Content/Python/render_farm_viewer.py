@@ -216,7 +216,22 @@ class ReadOnlyFarmClient:
             isinstance(item, dict) for item in workers
         ):
             raise FarmViewerError("The render-farm worker list was invalid.")
-        return workers
+        return [normalize_worker(worker) for worker in workers]
+
+
+def normalize_worker(worker: dict[str, Any]) -> dict[str, Any]:
+    """Adapt SQL worker records to the viewer's display fields."""
+    capabilities = _json_object(worker.get("capabilities_json"))
+    projects = capabilities.get("registered_projects")
+    project_names = ", ".join(str(p) for p in projects) if isinstance(projects, list) else ""
+    return {
+        **worker,
+        "worker_id": worker.get("id") or worker.get("worker_id"),
+        "worker_name": worker.get("display_name") or worker.get("worker_name") or worker.get("id"),
+        "last_heartbeat_utc": worker.get("last_seen_at") or worker.get("last_heartbeat_utc"),
+        "project": worker.get("project") or capabilities.get("project") or project_names,
+        "worker_git_commit": worker.get("worker_git_commit") or capabilities.get("git_commit"),
+    }
 
 def _text(value: Any) -> str:
     return "" if value is None else str(value).strip()
