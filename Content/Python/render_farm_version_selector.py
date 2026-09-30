@@ -2,7 +2,7 @@
 
 
 def initialize(v1_checkbox, v2_checkbox):
-    """Each Rendering Tool instance starts on V1, independent of session settings."""
+    """Bind exclusive toggles while preserving the checkboxes' current states."""
     updating = False
 
     def select(active, other):
@@ -22,7 +22,6 @@ def initialize(v1_checkbox, v2_checkbox):
     v2_checkbox.on_check_state_changed.clear()
     v1_checkbox.on_check_state_changed.add_callable(lambda _checked: select(v1_checkbox, v2_checkbox))
     v2_checkbox.on_check_state_changed.add_callable(lambda _checked: select(v2_checkbox, v1_checkbox))
-    select(v1_checkbox, v2_checkbox)
 
 
 def use_v2(v1_checkbox, v2_checkbox):

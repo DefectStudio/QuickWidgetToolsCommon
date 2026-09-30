@@ -9,15 +9,17 @@ import render_farm_version_selector as selector
 
 
 def verify():
+    importlib.reload(selector)
     asset = unreal.load_asset("/QuickWidgetTools/EditorWidgets/WBP_03_RenderingTool")
     tree_path = asset.get_path_name() + ":WidgetTree."
-    assert unreal.load_object(None, tree_path + "FarmVersionV1").is_checked()
-    assert not unreal.load_object(None, tree_path + "FarmVersionV2").is_checked()
+    default_v1 = unreal.load_object(None, tree_path + "FarmVersionV1").is_checked()
+    default_v2 = unreal.load_object(None, tree_path + "FarmVersionV2").is_checked()
+    assert default_v1 != default_v2, "Select exactly one farm in the widget defaults."
     widget = unreal.get_editor_subsystem(unreal.EditorUtilitySubsystem).spawn_and_register_tab(asset)
     v1 = widget.get_editor_property("FarmVersionV1")
     v2 = widget.get_editor_property("FarmVersionV2")
     assert v1.on_check_state_changed.is_bound() and v2.on_check_state_changed.is_bound()
-    assert v1.is_checked() and not v2.is_checked()
+    assert (v1.is_checked(), v2.is_checked()) == (default_v1, default_v2)
     button = widget.get_editor_property("SendRenderQueuetoFarmButton")
     calls = []
     original_reload = importlib.reload
@@ -36,7 +38,7 @@ def verify():
         v1.on_check_state_changed.broadcast(True)
         assert v1.is_checked() and not v2.is_checked()
         button.on_clicked.broadcast()
-    assert calls == [{"use_v2": False}, {"use_v2": True}, {"use_v2": False}], calls
+    assert calls == [{"use_v2": bool(default_v2)}, {"use_v2": True}, {"use_v2": False}], calls
     unreal.log("[FarmVersionSelectorTest] PASS: defaults, exclusive selection and actual submission button routing. No jobs published.")
 
 

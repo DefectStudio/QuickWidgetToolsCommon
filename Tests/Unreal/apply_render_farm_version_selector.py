@@ -43,8 +43,11 @@ def apply():
 
     label_reference = unreal.load_object(None, prefix + "TextBlock_17")
     for version in ("V1", "V2"):
-        checkbox = widget("FarmVersion" + version, unreal.CheckBox)
-        checkbox.set_is_checked(version == "V1")
+        checkbox_name = "FarmVersion" + version
+        existing_checkbox = unreal.find_object(None, prefix + checkbox_name)
+        checkbox = widget(checkbox_name, unreal.CheckBox)
+        if existing_checkbox is None:
+            checkbox.set_is_checked(version == "V2")
         checkbox.set_tool_tip_text("Send queued jobs to the " + version + " render farm.")
         if checkbox.get_parent() is None:
             slot = row.add_child_to_horizontal_box(checkbox)

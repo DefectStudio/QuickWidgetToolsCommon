@@ -1,8 +1,19 @@
 # Render farm version selection
 
 The Rendering Tool has V1 and V2 checkboxes to the right of Send Render Queue
-to Farm. They behave as a radio group: exactly one version stays selected.
-Every new tool instance starts with V1 checked. Selection is not persisted.
+to Farm. Clicking either checkbox selects it and clears the other, keeping the
+active choice selected even when it is clicked again.
+
+Initialization preserves the checkboxes' current states, so new tool instances
+use the defaults saved in the widget. Set `FarmVersionV1` unchecked and
+`FarmVersionV2` checked in the widget to start on V2. Selection is not persisted
+between tool instances. If both boxes are checked or both are unchecked, the
+publisher rejects the selection until one version is chosen.
+
+The Blueprint call remains `render_farm_version_selector.initialize(v1_checkbox,
+v2_checkbox)`. After editing the Python module in an open editor session, reload
+it with `importlib.reload(render_farm_version_selector)` and reopen the tool,
+or restart Unreal, to load the updated initialization behavior.
 
 The button passes the selection directly to the publisher. The confirmation
 dialog identifies the destination version. It never falls back to the other
@@ -40,7 +51,12 @@ credentials, administrator overrides, invalid bundles, and V1/V2 isolation.
 All 45 Python regression tests pass. The bundled connection was also verified
 against the hosted V2 service with no local profile or credential environment:
 the database was connected and authentication returned the `submit` role.
-The live Unreal widget's defaults, exclusive check events, active-choice re-click,
+The original live Unreal widget's exclusive check events, active-choice re-click,
 and actual Send button were tested with submission intercepted (V1, V2, V1).
+The current live verification script checks the saved widget defaults instead
+of requiring V1 and intercepts submission while testing either starting version.
 The saved widget can be rebuilt with `Tests/Unreal/apply_render_farm_version_selector.py`
 and checked in Unreal with `Tests/Unreal/verify_render_farm_version_selector.py`.
+The rebuild helper preserves existing checkbox defaults; newly created selectors
+start with V2 selected. Pure Python selector tests cover default preservation,
+exclusive clicks, reinitialization, and rejection of ambiguous selections.
