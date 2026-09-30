@@ -1,4 +1,4 @@
-"""Read-only Unreal Editor viewer for the Defect render farm.
+"""Read-only Unreal Editor viewer for the Defect V2 render farm.
 
 The matching Editor Utility Widget is intentionally a very small shell.  Its
 Construct event calls :func:`run`, and this module builds the temporary UMG
@@ -120,8 +120,10 @@ WORKER_STATUS_STYLE_COLORS = {
     "stale": "#ff7777",
 }
 
-VIEWER_API_URL = "https://defect-farm-api.twilight-tooth-7b7c.workers.dev"
-VIEWER_TOKEN = "defect_viewer_v1_ec3027609d1c5e4934ab5bf574f6cf231b02547d6d968ce45bc53092dc9499f8"
+# Company V2 read-only connection, independent of the V1/V2 submit selector.
+# The service retains /api/v1 routes as its wire protocol version.
+VIEWER_API_URL = "https://defect-farm-api-v2.twilight-tooth-7b7c.workers.dev"
+VIEWER_TOKEN = "defect_v2_viewer_a03K2bPEMKFt0DTRZ_numXWyJVue8uD7QwDbpyf4AjIk5eN29gJOpt4n4VBOktoj"
 REQUEST_TIMEOUT_SECONDS = 15.0
 AUTO_REFRESH_SECONDS = 60.0
 WORKER_STALE_AFTER_SECONDS = 180.0

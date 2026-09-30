@@ -1,5 +1,11 @@
 # Render Farm Viewer UI contract
 
+The viewer reads jobs and workers from the company V2 service at
+`https://defect-farm-api-v2.twilight-tooth-7b7c.workers.dev` using its bundled
+read-only viewer credential. Artists do not need a local connection profile.
+The rendering tool's V1/V2 submission selector does not change this viewer.
+`/api/v1` in request paths is the API protocol version, not the farm generation.
+
 Python owns API reads, data normalization, and refresh timing.
 UMG owns every visual decision: hierarchy, anchors, sizing, spacing, fonts,
 colors, brushes, wrapping, and visibility.

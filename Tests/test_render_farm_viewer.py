@@ -89,8 +89,11 @@ class ReadOnlyClientTests(unittest.TestCase):
         self.assertTrue(opener.requests)
         for request, timeout in opener.requests:
             self.assertEqual("GET", request.get_method())
-            self.assertTrue(request.full_url.startswith("https://"))
-            self.assertTrue(request.headers["Authorization"].startswith("Bearer defect_viewer_"))
+            self.assertEqual(
+                "defect-farm-api-v2.twilight-tooth-7b7c.workers.dev",
+                urlparse(request.full_url).netloc,
+            )
+            self.assertEqual(f"Bearer {viewer.VIEWER_TOKEN}", request.headers["Authorization"])
             self.assertEqual(viewer.REQUEST_TIMEOUT_SECONDS, timeout)
 
     def test_client_exposes_no_mutating_operations(self) -> None:
