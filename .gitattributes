@@ -9,6 +9,10 @@
 # Precompiled Win64 editor module distributed to non-programmer workstations.
 *.dll filter=lfs diff=lfs merge=lfs -text
 *.modules text
+# Packaged precompiled runtime objects and editor import libraries.
+/Intermediate/Build/**/*.obj filter=lfs diff=lfs merge=lfs -text
+/Intermediate/Build/**/*.lib filter=lfs diff=lfs merge=lfs -text
+*.precompiled text
 # Common binary source assets
 *.fbx filter=lfs diff=lfs merge=lfs -text
 *.abc filter=lfs diff=lfs merge=lfs -text
@@ -23,3 +27,5 @@
 /Resources/** -filter -diff -merge -text
 # Configuration remains normal text.
 *.ini text
+*.lib filter=lfs diff=lfs merge=lfs -text
+*.obj filter=lfs diff=lfs merge=lfs -text
