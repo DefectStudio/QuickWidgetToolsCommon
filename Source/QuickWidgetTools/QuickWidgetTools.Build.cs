@@ -26,6 +26,8 @@ public class QuickWidgetTools : ModuleRules
                 "UMG",
                 "UMGEditor",
                 "UnrealEd",
+                "RenderCore",
+                "RHI",
                 "LevelSequence",
                 "LevelSequenceEditor",
                 "MovieScene",
